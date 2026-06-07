@@ -111,7 +111,7 @@ int main(void) {
                   {-1, -1, 1},  {1, -1, 1},  {1, 1, 1},  {-1, 1, 1}};
 
   float angle = 0.0f;
-
+  float Xangle = 0.0f;
   write(STDOUT_FILENO, "\x1b[2J", 4);
   write(STDOUT_FILENO, "\x1b[H", 3);
 
@@ -126,7 +126,7 @@ int main(void) {
 
     // rotate the cube
     for (int i = 0; i < 8; i++)
-      transformed[i] = rotateX(rotateY(cube[i], angle), 0.45f);
+      transformed[i] = rotateX(rotateY(cube[i], angle), 0.6f + Xangle);
 
     // draw vertices
     for (int i = 0; i < 8; i++) {
@@ -137,6 +137,7 @@ int main(void) {
 
     render();
     angle += 0.03f;
+    Xangle += 0.0f;
     usleep(16000);
   }
 
