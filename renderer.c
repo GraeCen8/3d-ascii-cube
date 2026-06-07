@@ -14,6 +14,8 @@ char screen[HEIGHT][WIDTH];
 #define X_SCALE 60
 #define Y_SCALE 24
 
+// the ration of X_SCALE to Y_SCALE has to be 5:2
+
 typedef struct {
   float x;
   float y;
