@@ -10,7 +10,9 @@
 #define HEIGHT 25
 char screen[HEIGHT][WIDTH];
 
-#define SCALE 20
+#define CAMERA_DISTANCE 5.0f
+#define X_SCALE 60
+#define Y_SCALE 24
 
 typedef struct {
   float x;
@@ -29,6 +31,8 @@ void enableRawMode(void) {
   atexit(disableRawMode);
   struct termios raw = original;
   raw.c_lflag &= ~(ECHO | ICANON);
+  raw.c_cc[VMIN] = 0;
+  raw.c_cc[VTIME] = 0;
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 }
 
@@ -70,12 +74,22 @@ Vec3 rotateY(Vec3 v, float a) {
   return r;
 }
 
-void project(Vec3 v, int *x, int *y) {
-  float z = v.z + 5.0f; // push the vec forward so its not behind the camera
+Vec3 rotateX(Vec3 v, float a) {
+  Vec3 r;
 
-  *x = (int)(WIDTH / 2 + (v.x / z) * SCALE);
-  *y = (int)(HEIGHT / 2 - (v.y / z) * SCALE);
-} 
+  r.y = v.y * cosf(a) - v.z * sinf(a);
+  r.z = v.y * sinf(a) + v.z * cosf(a);
+  r.x = v.x;
+
+  return r;
+}
+
+void project(Vec3 v, int *x, int *y) {
+  float z = CAMERA_DISTANCE - v.z;
+
+  *x = (int)(WIDTH / 2 + (v.x / z) * X_SCALE);
+  *y = (int)(HEIGHT / 2 - (v.y / z) * Y_SCALE);
+}
 
 /* --------------- MAIN --------------- */
 
@@ -87,3 +101,43 @@ void project(Vec3 v, int *x, int *y) {
 //     usleep(16000);
 //   }
 // }
+
+int main(void) {
+  enableRawMode();
+
+  Vec3 cube[8] = {{-1, -1, -1}, {1, -1, -1}, {1, 1, -1}, {-1, 1, -1},
+                  {-1, -1, 1},  {1, -1, 1},  {1, 1, 1},  {-1, 1, 1}};
+
+  float angle = 0.0f;
+
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[H", 3);
+
+  while (1) {
+    char c;
+    if (read(STDIN_FILENO, &c, 1) == 1)
+      if (c == 'q') break;
+
+    clearBuffer();
+
+    Vec3 transformed[8];
+
+    // rotate the cube
+    for (int i = 0; i < 8; i++)
+      transformed[i] = rotateX(rotateY(cube[i], angle), 0.45f);
+
+    // draw vertices
+    for (int i = 0; i < 8; i++) {
+      int x, y;
+      project(transformed[i], &x, &y);
+      drawPoint(x, y, '#');
+    }
+
+    render();
+    angle += 0.03f;
+    usleep(16000);
+  }
+
+  disableRawMode();
+  return 0;
+}
