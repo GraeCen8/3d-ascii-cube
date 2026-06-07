@@ -1,6 +1,24 @@
+#include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include <termios.h>
 #include <unistd.h>
+
+/* ------------- DECLERATIONS ------------- */
+
+#define WIDTH 80
+#define HEIGHT 25
+char screen[HEIGHT][WIDTH];
+
+#define SCALE 20
+
+typedef struct {
+  float x;
+  float y;
+  float z;
+} Vec3;
+
+/* ---------------- RAW MODE ---------------- */
 
 struct termios original;
 
@@ -14,10 +32,7 @@ void enableRawMode(void) {
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 }
 
-#define WIDTH 80
-#define HEIGHT 25
-
-char screen[HEIGHT][WIDTH];
+/* ---------------- BUFFER ---------------- */
 
 void clearBuffer(void) {
   for (int y = 0; y < HEIGHT; y++)
@@ -43,11 +58,32 @@ void render(void) {
   }
 }
 
-int main(void) {
-  while (1) {
-    clearBuffer();
-    drawPoint(40, 12, 'H');
-    render();
-    usleep(16000);
-  }
+/* ---------------- 3D ---------------- */
+
+Vec3 rotateY(Vec3 v, float a) {
+  Vec3 r;
+
+  r.x = v.x * cosf(a) - v.z * sinf(a);
+  r.z = v.x * sinf(a) + v.z * cosf(a);
+  r.y = v.y;
+
+  return r;
 }
+
+void project(Vec3 v, int *x, int *y) {
+  float z = v.z + 5.0f; // push the vec forward so its not behind the camera
+
+  *x = (int)(WIDTH / 2 + (v.x / z) * SCALE);
+  *y = (int)(HEIGHT / 2 - (v.y / z) * SCALE);
+} 
+
+/* --------------- MAIN --------------- */
+
+// int main(void) {
+//   while (1) {
+//     clearBuffer();
+//     drawPoint(40, 12, 'H');
+//     render();
+//     usleep(16000);
+//   }
+// }
